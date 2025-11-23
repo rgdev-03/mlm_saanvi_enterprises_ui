@@ -111,7 +111,7 @@ export const fetchRequest = async ({
     }
 
     // 🚨 Refresh failed -> clear tokens and redirect to login
-    if (err.status === 401 || err.status === 404) {
+    if (err.status === 401 ) {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
 

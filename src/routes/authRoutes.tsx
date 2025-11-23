@@ -1,6 +1,6 @@
 import { Route, Routes, Navigate } from "react-router-dom";
-import { Login } from "../pages/auth/Login";
 import { SignUp } from "../pages/auth/signup";
+import Login from "@/pages/auth/Login";
 
 export default function AuthRoutes() {
   return (

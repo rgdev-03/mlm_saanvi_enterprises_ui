@@ -1,0 +1,81 @@
+
+
+.card_container {
+    background: #333; /* White background for the card */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+    border-radius: 8px; /* Rounded corners */
+    margin-bottom: 20px; /* Space between cards */
+    display: flex; /* Enables flexible layouts */
+    flex-direction: column; /* Stack children vertically */
+    align-items: center; /* Center align items horizontally */
+    text-align: center;
+    
+  }
+  
+  .card_title {
+    font-size: 16px; /* Larger text for the title */
+    color: #ffff; /* Dark gray color for better readability */
+    font-weight: 500; /* Medium weight for the title */
+    margin-bottom: 8px; /* Space between title and subtitle */
+  }
+  
+  .card_subtitle {
+    font-size: 12px; /* Smaller font size for the subtitle */
+    color: #f1f1f1; /* Lighter gray for the subtitle */
+  }
+    /* Vertical Scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px; /* Width of the vertical scrollbar */
+  }
+  
+  ::-webkit-scrollbar-thumb:vertical {
+    background-color: darkgrey;
+    border-radius: 10px;
+    border: 3px solid #333;
+  }
+  
+  ::-webkit-scrollbar-track:vertical {
+    background: #0000;
+    border-radius: 10px;
+  }
+  
+  /* Horizontal Scrollbar */
+  ::-webkit-scrollbar {
+    height: 8px; /* Height of the horizontal scrollbar */
+  }
+  
+  ::-webkit-scrollbar-thumb:horizontal {
+    background-color: darkgrey; /* Different color for distinction */
+    border-radius: 10px;
+    border: 3px solid #333;
+  }
+  
+  ::-webkit-scrollbar-track:horizontal {
+    background: #0000;
+    border-radius: 10px;
+  }
+  
+  table td,th{
+    color: black;
+  }
+
+
+  .item {
+    display: flex;
+    align-items: center;
+    border-radius: var(--mantine-radius-md);
+    border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+    padding: var(--mantine-spacing-sm) var(--mantine-spacing-xl);
+    background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-5));
+    margin-bottom: var(--mantine-spacing-sm);
+  }
+  
+  .itemDragging {
+    box-shadow: var(--mantine-shadow-sm);
+  }
+  
+  .symbol {
+    font-size: 30px;
+    font-weight: 700;
+    width: 60px;
+  }

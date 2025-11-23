@@ -51,13 +51,10 @@ export function AdminDashboard() {
     },
   ];
 
-  const handleLogout = () => {
-    logout();
-    navigate('/auth/login');
-  };
+
 
   return (
-    <Container size="lg" py="xl">
+    <div style={{ padding: 24 }}>
       <Group justify="space-between" mb="xl">
         <div>
           <Title order={2}>Dashboard</Title>
@@ -65,9 +62,7 @@ export function AdminDashboard() {
             Welcome back, {userName}!
           </Text>
         </div>
-        <Button color="red" variant="light" onClick={handleLogout}>
-          Logout
-        </Button>
+
       </Group>
 
       <Paper p="md" radius="md" withBorder mb="xl">
@@ -142,6 +137,6 @@ export function AdminDashboard() {
           </Paper>
         </Grid.Col>
       </Grid>
-    </Container>
+    </div>
   );
 }

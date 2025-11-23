@@ -1,8 +1,9 @@
 import { Outlet } from 'react-router-dom';
-import { AppShell, Group, Title, Button, Burger, Stack, Text, Avatar, Menu } from '@mantine/core';
+import { AppShell, Group, Title, Button, Burger, Text, Avatar, Menu } from '@mantine/core';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useDisclosure } from '@mantine/hooks';
+import { Sidebar } from './Sidebar';
 
 export function MainLayout() {
   const { userName, logout } = useAuth();
@@ -19,62 +20,67 @@ export function MainLayout() {
       padding="md"
       header={{ height: { base: 60, md: 70, lg: 80 } }}
       navbar={{
-        width: { base: 200, md: 300, lg: 400 },
+        width: { base: 160, md: 220, lg: 260 },
         breakpoint: 'sm',
         collapsed: { mobile: !opened },
       }}
     >
-      <AppShell.Header>
+      <AppShell.Header
+        style={{
+          backgroundColor: '#243447',    // Steel Blue
+          color: 'white',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
+        }}
+      >
         <Group h="100%" px="md" justify="space-between">
           <Group>
-        <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-        <Title order={3}>Dashboard</Title>
+            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" color="white" />
+            <Title order={3} c="white">Dashboard</Title>
           </Group>
-          <Group visibleFrom="sm">
-        <Text size="sm">{userName}</Text>
-        <Button size="sm" variant="subtle" onClick={handleLogout}>
-          Logout
-        </Button>
-          </Group>
+
+            <Group visibleFrom="sm" p="md" align="center">
+              <div>
+              <Text size="sm" fw={500} c="white">
+              Welcome,
+              </Text>
+              <Text size="sm" fw={700} c="white">
+              {userName}
+              </Text>
+            </div>
+
+            <Avatar size="md" radius="xl" color="white" style={{ backgroundColor: '#d21919ff' }}>
+              {userName?.charAt(0)?.toUpperCase()}
+            </Avatar>
+            </Group>
+
           <Menu shadow="md" width={200} position="bottom-end">
-        <Menu.Target>
-          <Avatar 
-            size="sm" 
-            radius="xl" 
-            style={{ cursor: 'pointer' }}
-            hiddenFrom="sm"
-          >
-            {userName?.charAt(0)?.toUpperCase()}
-          </Avatar>
-        </Menu.Target>
-        <Menu.Dropdown>
-          <Menu.Label>{userName}</Menu.Label>
-          <Menu.Item onClick={handleLogout}>
-            Logout
-          </Menu.Item>
-        </Menu.Dropdown>
+            <Menu.Target>
+              <Avatar
+                size="sm"
+                radius="xl"
+                style={{ cursor: 'pointer' }}
+                hiddenFrom="sm"
+                bg="#ffffffff"
+                c="white"
+              >
+                {userName?.charAt(0)?.toUpperCase()}
+              </Avatar>
+            </Menu.Target>
+
+            <Menu.Dropdown >
+              <Menu.Label>{userName}</Menu.Label>
+            </Menu.Dropdown>
           </Menu>
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar p="md">
-        <Stack gap="md">
-          <Button fullWidth variant="subtle" justify="flex-start">
-            Dashboard
-          </Button>
-          <Button fullWidth variant="subtle" justify="flex-start">
-            Users
-          </Button>
-          <Button fullWidth variant="subtle" justify="flex-start">
-            Reports
-          </Button>
-          <Button fullWidth variant="subtle" justify="flex-start">
-            Settings
-          </Button>
-        </Stack>
+
+
+      <AppShell.Navbar >
+        <Sidebar />
       </AppShell.Navbar>
 
-      <AppShell.Main>
+      <AppShell.Main >
         <Outlet />
       </AppShell.Main>
     </AppShell>
