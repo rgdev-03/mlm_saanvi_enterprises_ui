@@ -1,34 +1,27 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   Container,
-  TextInput,
-  Select,
-  Grid,
-  Card,
   Text,
   Group,
   Loader,
   Button,
   Modal,
   NumberInput,
-  Box,
-  Divider,
-  Image,
-  Badge,
+  Card,
   Stack,
   ActionIcon,
+  TextInput,
+  Grid,
 } from "@mantine/core";
-import { IconEdit, IconPlus, IconRefresh, IconSearch, IconTrash } from "@tabler/icons-react";
+import { IconPlus, IconEdit, IconTrash } from "@tabler/icons-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getVehicles, createVehicle, deleteVehicle, updateVehicle } from "@/api/api";
-import Datatable from "@/components/CommonTable";
-import type { MRT_ColumnDef } from "mantine-react-table";
-import { Icon } from "lucide-react";
-import ConfirmationModal from "@/components/ConfirmationModal"; // adjust path if needed
+import ConfirmationModal from "@/components/ConfirmationModal";
+import DataTable from "@/components/CommonTable";
 
-// Theme-ish colors — tweak to match your real sidebar
-const SIDEBAR_BG = "#243744"; // dark-blue background
-const SIDEBAR_ACCENT = "#ea4b52"; // red/pink accent used for selected item
+// Theme colors
+const SIDEBAR_BG = "#243744";
+const SIDEBAR_ACCENT = "#ea4b52";
 const SIDEBAR_TEXT = "#e6eef6";
 
 export default function VehicleListPage() {
@@ -52,91 +45,22 @@ export default function VehicleListPage() {
   };
 
   // React Query fetch
-  const { data, isLoading, refetch, isFetching } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["vehicles", filters],
     queryFn: async () => {
       const queryString = buildQueryParams();
-      return await getVehicles(`${queryString}`);
+      return await getVehicles(`?${queryString}`);
     },
   });
 
   const vehicles = data ?? [];
 
-  // confirmation modal state
+  // Confirmation modal state
   const [confirmOpened, setConfirmOpened] = useState(false);
   const [selectedDeleteId, setSelectedDeleteId] = useState<string | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
 
-  const columns: MRT_ColumnDef<any>[] = [
-    {
-      accessorKey: "sr_no",
-      header: "#",
-      Cell: ({ row }) => row.index + 1,
-      enableColumnOrdering: false,
-      size: 40,
-    },
-    { accessorKey: "brand", header: "Brand" },
-    { accessorKey: "name", header: "Name" },
-    { accessorKey: "model_number", header: "Model" },
-    {
-      accessorKey: "price",
-      header: "Price",
-      Cell: ({ cell }) => {
-        const v = cell.getValue();
-        return v ? `₹ ${Number(v).toLocaleString()}` : "-";
-      },
-    },
-    { accessorKey: "commission_base", header: "Commission Base" },
-    {
-      accessorKey: "actions",
-      header: "Actions",
-      Cell: ({ row }) => {
-        const vehicle = row.original;
-        return (
-          <Group gap="xs">
-            <ActionIcon
-              variant="light"
-              color="blue"
-              size="md"
-              onClick={() => {
-                setEditForm({
-                  id: vehicle.id,
-                  brand: vehicle.brand,
-                  name: vehicle.name,
-                  model_number: vehicle.model_number,
-                  price: vehicle.price,
-                  commission_base: vehicle.commission_base,
-                });
-                setEditErrors({});
-                setEditOpened(true);
-              }}
-              aria-label="Edit"
-            >
-              <IconEdit size={18} />
-            </ActionIcon>
-            <ActionIcon
-              variant="light"
-              color="red"
-              size="md"
-              loading={confirmLoading && selectedDeleteId === String(vehicle.id)}
-              onClick={() => {
-                // open confirmation modal for this vehicle
-                setSelectedDeleteId(String(vehicle.id));
-                setConfirmOpened(true);
-              }}
-              aria-label="Delete"
-            >
-              <IconTrash size={18} />
-            </ActionIcon>
-          </Group>
-        );
-      },
-      enableColumnOrdering: false,
-      size: 120,
-    },
-  ];
-
-  // --- Modal + form state ---
+  // Modal + form state
   const [opened, setOpened] = useState(false);
   const [editOpened, setEditOpened] = useState(false);
   const [form, setForm] = useState({
@@ -144,7 +68,7 @@ export default function VehicleListPage() {
     name: "",
     model_number: "",
     price: "",
-    commission_base: "",
+    points: "",
   });
   const [editForm, setEditForm] = useState({
     id: "",
@@ -152,26 +76,78 @@ export default function VehicleListPage() {
     name: "",
     model_number: "",
     price: "",
-    commission_base: "",
+    points: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
 
+  // Define columns for the new DataTable
+  const columns = [
+    { accessorKey: "brand", header: "Brand" },
+    { accessorKey: "name", header: "Name" },
+    { accessorKey: "model_number", header: "Model" },
+    { accessorKey: "price", header: "Price" },
+    { accessorKey: "points", header: "Commission Base" },
+  ];
+
+  // Format data for display
+  const formattedData = vehicles.map((vehicle: any) => ({
+    ...vehicle,
+    price: vehicle.price ? `₹ ${Number(vehicle.price).toLocaleString()}` : "-",
+    points: vehicle.points ? `₹ ${Number(vehicle.points).toLocaleString()}` : "-",
+  }));
+
+  // Handle edit action
+  const handleEdit = (row: any) => {
+    setEditForm({
+      id: row.id,
+      brand: row.brand,
+      name: row.name,
+      model_number: row.model_number,
+      price: String(row.price).replace(/[₹,]/g, "").trim(),
+      points: String(row.points).replace(/[₹,]/g, "").trim(),
+    });
+    setEditErrors({});
+    setEditOpened(true);
+  };
+
+  // Handle delete action
+  const handleDelete = (row: any) => {
+    setSelectedDeleteId(String(row.id));
+    setConfirmOpened(true);
+  };
+
+  // Confirm delete handler
+  const handleConfirmDelete = async () => {
+    if (!selectedDeleteId) return;
+    setConfirmLoading(true);
+    try {
+      await deleteVehicle(selectedDeleteId);
+      await refetch();
+    } catch (err) {
+      console.error("Delete error", err);
+    } finally {
+      setConfirmLoading(false);
+      setConfirmOpened(false);
+      setSelectedDeleteId(null);
+    }
+  };
+
+  // Create mutation
   const mutation = useMutation({
     mutationFn: (payload: any) => createVehicle(payload),
     onSuccess: () => {
       setOpened(false);
-      setForm({ brand: "", name: "", model_number: "", price: "", commission_base: "" });
+      setForm({ brand: "", name: "", model_number: "", price: "", points: "" });
       setErrors({});
-      // refetch vehicles
       refetch();
     },
     onError: (err: any) => {
-      // basic error handling
       console.error("createVehicle error", err);
     },
   });
 
+  // Validation
   const validate = () => {
     const e: Record<string, string> = {};
     if (!form.brand.trim()) e.brand = "Brand is required";
@@ -190,7 +166,7 @@ export default function VehicleListPage() {
       name: form.name,
       model_number: form.model_number,
       price: String(form.price),
-      commission_base: String(form.commission_base || "0"),
+      points: String(form.points || "0"),
     });
   };
 
@@ -213,7 +189,7 @@ export default function VehicleListPage() {
         name: editForm.name,
         model_number: editForm.model_number,
         price: String(editForm.price),
-        commission_base: String(editForm.commission_base || "0"),
+        points: String(editForm.points || "0"),
       });
       setEditOpened(false);
       refetch();
@@ -222,8 +198,6 @@ export default function VehicleListPage() {
     }
   };
 
-  const totalVehicles = vehicles.length;
-
   const header = (
     <Group justify="space-between" align="center" style={{ width: "100%" }}>
       <Group align="center">
@@ -231,7 +205,7 @@ export default function VehicleListPage() {
           <Text size="xl" fw={700} c={SIDEBAR_BG}>
             Vehicles
           </Text>
-          <Text size="sm" color="dimmed">
+          <Text size="sm" c="dimmed">
             Manage the vehicle catalogue — add, edit and export vehicle data.
           </Text>
         </div>
@@ -250,39 +224,46 @@ export default function VehicleListPage() {
     </Group>
   );
 
-  // confirm delete handler used by ConfirmationModal
-  const handleConfirmDelete = async () => {
-    if (!selectedDeleteId) return;
-    setConfirmLoading(true);
-    try {
-      await deleteVehicle(selectedDeleteId);
-      await refetch();
-    } catch (err) {
-      console.error("Delete error", err);
-    } finally {
-      setConfirmLoading(false);
-      setConfirmOpened(false);
-      setSelectedDeleteId(null);
-    }
-  };
-
   return (
     <Container p={12} fluid>
       <Stack gap="md">
         {header}
 
-        <Card p="lg" radius="md">
+        <Card p="lg" radius="md" shadow="sm">
           {isLoading ? (
             <Group align="center" justify="center" py={40}>
               <Loader size="lg" />
             </Group>
           ) : (
-            <Datatable columns={columns} data={vehicles} />
+            <DataTable
+              columns={columns}
+              data={formattedData}
+              renderActions={(row: any) => (
+                <Group gap="xs">
+                  <ActionIcon
+                    variant="light"
+                    color="blue"
+                    onClick={() => handleEdit(row)}
+                    radius="md"
+                  >
+                    <IconEdit size={16} />
+                  </ActionIcon>
+                  <ActionIcon
+                    variant="light"
+                    color="red"
+                    onClick={() => handleDelete(row)}
+                    radius="md"
+                  >
+                    <IconTrash size={16} />
+                  </ActionIcon>
+                </Group>
+              )}
+            />
           )}
         </Card>
 
-        <Text size="xs" color="dimmed" style={{ textAlign: "right" }}>
-          Tip: click column headers to sort or use filters to narrow results.
+        <Text size="xs" c="dimmed" style={{ textAlign: "right" }}>
+          Tip: click column headers to sort or use the search box to filter results.
         </Text>
       </Stack>
 
@@ -291,7 +272,7 @@ export default function VehicleListPage() {
         opened={opened}
         onClose={() => setOpened(false)}
         title={
-          <Text fw={700} style={{ color: SIDEBAR_BG }}>
+          <Text fw={700} c={SIDEBAR_TEXT}>
             Create vehicle
           </Text>
         }
@@ -299,7 +280,7 @@ export default function VehicleListPage() {
         size="md"
         centered
         styles={{
-          content: { background: "#0d1a20", borderRadius: 12, color: SIDEBAR_TEXT, padding: 18 },
+          content: { background: SIDEBAR_BG, borderRadius: 12, color: SIDEBAR_TEXT, padding: 18 },
           title: { color: SIDEBAR_TEXT },
         }}
       >
@@ -312,6 +293,15 @@ export default function VehicleListPage() {
                 value={form.brand}
                 onChange={(e) => setForm((s) => ({ ...s, brand: e.currentTarget.value }))}
                 error={errors.brand}
+                styles={{
+                  input: { 
+                    backgroundColor: "#1a2332", 
+                    border: "1px solid #374151",
+                    color: SIDEBAR_TEXT,
+                    "&:focus": { borderColor: "#1971c2" }
+                  },
+                  label: { color: SIDEBAR_TEXT },
+                }}
               />
             </Grid.Col>
 
@@ -321,6 +311,15 @@ export default function VehicleListPage() {
                 placeholder="Vehicle name (optional)"
                 value={form.name}
                 onChange={(e) => setForm((s) => ({ ...s, name: e.currentTarget.value }))}
+                styles={{
+                  input: { 
+                    backgroundColor: "#1a2332", 
+                    border: "1px solid #374151",
+                    color: SIDEBAR_TEXT,
+                    "&:focus": { borderColor: "#1971c2" }
+                  },
+                  label: { color: SIDEBAR_TEXT },
+                }}
               />
             </Grid.Col>
 
@@ -331,6 +330,15 @@ export default function VehicleListPage() {
                 value={form.model_number}
                 onChange={(e) => setForm((s) => ({ ...s, model_number: e.currentTarget.value }))}
                 error={errors.model_number}
+                styles={{
+                  input: { 
+                    backgroundColor: "#1a2332", 
+                    border: "1px solid #374151",
+                    color: SIDEBAR_TEXT,
+                    "&:focus": { borderColor: "#1971c2" }
+                  },
+                  label: { color: SIDEBAR_TEXT },
+                }}
               />
             </Grid.Col>
 
@@ -341,25 +349,58 @@ export default function VehicleListPage() {
                 onChange={(val) => setForm((s) => ({ ...s, price: String(val ?? "") }))}
                 error={errors.price}
                 min={0}
+                styles={{
+                  input: { 
+                    backgroundColor: "#1a2332", 
+                    border: "1px solid #374151",
+                    color: SIDEBAR_TEXT,
+                    "&:focus": { borderColor: "#1971c2" }
+                  },
+                  label: { color: SIDEBAR_TEXT },
+                }}
               />
             </Grid.Col>
 
             <Grid.Col span={6}>
               <NumberInput
                 label="Commission Base"
-                value={form.commission_base ? Number(form.commission_base) : undefined}
-                onChange={(val) => setForm((s) => ({ ...s, commission_base: String(val ?? "") }))}
+                value={form.points ? Number(form.points) : undefined}
+                onChange={(val) => setForm((s) => ({ ...s, points: String(val ?? "") }))}
                 min={0}
+                styles={{
+                  input: { 
+                    backgroundColor: "#1a2332", 
+                    border: "1px solid #374151",
+                    color: SIDEBAR_TEXT,
+                    "&:focus": { borderColor: "#1971c2" }
+                  },
+                  label: { color: SIDEBAR_TEXT },
+                }}
               />
             </Grid.Col>
           </Grid>
 
           <Group justify="right" mt="md">
-            <Button variant="default" onClick={() => setOpened(false)} disabled={mutation.isPending}>
+            <Button 
+              variant="default" 
+              onClick={() => setOpened(false)} 
+              disabled={mutation.isPending}
+              styles={{
+                root: {
+                  backgroundColor: "#374151",
+                  color: SIDEBAR_TEXT,
+                  "&:hover": { backgroundColor: "#4b5563" }
+                }
+              }}
+            >
               Cancel
             </Button>
 
-            <Button type="submit" loading={mutation.isPending} style={{ background: SIDEBAR_ACCENT, color: SIDEBAR_TEXT }}>
+            <Button 
+              type="submit" 
+              loading={mutation.isPending} 
+              style={{ background: SIDEBAR_ACCENT, color: SIDEBAR_TEXT }}
+            >
               Create
             </Button>
           </Group>
@@ -371,7 +412,7 @@ export default function VehicleListPage() {
         opened={editOpened}
         onClose={() => setEditOpened(false)}
         title={
-          <Text fw={700} style={{ color: SIDEBAR_BG }}>
+          <Text fw={700} c={SIDEBAR_TEXT}>
             Edit vehicle
           </Text>
         }
@@ -379,7 +420,7 @@ export default function VehicleListPage() {
         size="md"
         centered
         styles={{
-          content: { background: "#0d1a20", borderRadius: 12, color: SIDEBAR_TEXT, padding: 18 },
+          content: { background: SIDEBAR_BG, borderRadius: 12, color: SIDEBAR_TEXT, padding: 18 },
           title: { color: SIDEBAR_TEXT },
         }}
       >
@@ -392,6 +433,15 @@ export default function VehicleListPage() {
                 value={editForm.brand}
                 onChange={(e) => setEditForm((s) => ({ ...s, brand: e.currentTarget.value }))}
                 error={editErrors.brand}
+                styles={{
+                  input: { 
+                    backgroundColor: "#1a2332", 
+                    border: "1px solid #374151",
+                    color: SIDEBAR_TEXT,
+                    "&:focus": { borderColor: "#1971c2" }
+                  },
+                  label: { color: SIDEBAR_TEXT },
+                }}
               />
             </Grid.Col>
 
@@ -401,6 +451,15 @@ export default function VehicleListPage() {
                 placeholder="Vehicle name (optional)"
                 value={editForm.name}
                 onChange={(e) => setEditForm((s) => ({ ...s, name: e.currentTarget.value }))}
+                styles={{
+                  input: { 
+                    backgroundColor: "#1a2332", 
+                    border: "1px solid #374151",
+                    color: SIDEBAR_TEXT,
+                    "&:focus": { borderColor: "#1971c2" }
+                  },
+                  label: { color: SIDEBAR_TEXT },
+                }}
               />
             </Grid.Col>
 
@@ -411,6 +470,15 @@ export default function VehicleListPage() {
                 value={editForm.model_number}
                 onChange={(e) => setEditForm((s) => ({ ...s, model_number: e.currentTarget.value }))}
                 error={editErrors.model_number}
+                styles={{
+                  input: { 
+                    backgroundColor: "#1a2332", 
+                    border: "1px solid #374151",
+                    color: SIDEBAR_TEXT,
+                    "&:focus": { borderColor: "#1971c2" }
+                  },
+                  label: { color: SIDEBAR_TEXT },
+                }}
               />
             </Grid.Col>
 
@@ -421,24 +489,55 @@ export default function VehicleListPage() {
                 onChange={(val) => setEditForm((s) => ({ ...s, price: String(val ?? "") }))}
                 error={editErrors.price}
                 min={0}
+                styles={{
+                  input: { 
+                    backgroundColor: "#1a2332", 
+                    border: "1px solid #374151",
+                    color: SIDEBAR_TEXT,
+                    "&:focus": { borderColor: "#1971c2" }
+                  },
+                  label: { color: SIDEBAR_TEXT },
+                }}
               />
             </Grid.Col>
 
             <Grid.Col span={6}>
               <NumberInput
                 label="Commission Base"
-                value={editForm.commission_base ? Number(editForm.commission_base) : undefined}
-                onChange={(val) => setEditForm((s) => ({ ...s, commission_base: String(val ?? "") }))}
+                value={editForm.points ? Number(editForm.points) : undefined}
+                onChange={(val) => setEditForm((s) => ({ ...s, points: String(val ?? "") }))}
                 min={0}
+                styles={{
+                  input: { 
+                    backgroundColor: "#1a2332", 
+                    border: "1px solid #374151",
+                    color: SIDEBAR_TEXT,
+                    "&:focus": { borderColor: "#1971c2" }
+                  },
+                  label: { color: SIDEBAR_TEXT },
+                }}
               />
             </Grid.Col>
           </Grid>
 
           <Group justify="right" mt="md">
-            <Button variant="default" onClick={() => setEditOpened(false)}>
+            <Button 
+              variant="default" 
+              onClick={() => setEditOpened(false)}
+              styles={{
+                root: {
+                  backgroundColor: "#374151",
+                  color: SIDEBAR_TEXT,
+                  "&:hover": { backgroundColor: "#4b5563" }
+                }
+              }}
+            >
               Cancel
             </Button>
-            <Button type="submit" style={{ background: SIDEBAR_ACCENT, color: SIDEBAR_TEXT }}>
+            <Button 
+              type="submit" 
+              style={{ background: SIDEBAR_ACCENT, color: SIDEBAR_TEXT }}
+            >
               Save
             </Button>
           </Group>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import classes from '../assets/NavbarSimple.module.css';
-import { CarIcon, LayoutDashboard, LogOut } from 'lucide-react';
+import { CarIcon, LayoutDashboard, LogOut, ChartBar, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import ConfirmationModal from "@/components/ConfirmationModal"; // adjust path if needed
@@ -10,6 +10,10 @@ import ConfirmationModal from "@/components/ConfirmationModal"; // adjust path i
 const data = [
   { link: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { link: '/vehicles', label: 'Vehicles', icon: CarIcon },
+  { link: '/agents', label: 'Agents', icon: Users },
+    { link: '/sales', label: 'Sales', icon: ChartBar },
+
+  { link: '/referral-tree', label: 'Referral Tree', icon: Users },
 ];
 
 export function Sidebar() {

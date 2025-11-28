@@ -8,10 +8,89 @@ export async function refreshTokenRequest(refreshToken: string) {
     requireAuth: false,
   });
 }
+// Agents endpoints
+export async function getAgents(queryString = "") {
+  return await fetchRequest({
+    method: "GET",
+    path: `/users/all/${queryString}`,
+    requireAuth: true,
+  });
+}
+
+export async function createAgent(payload: {
+  username: string;
+  password: string;
+  email?: string;
+  phone?: string;
+  sponsor_code?: string;
+  role?: string;
+}) {
+  return await fetchRequest({
+    method: "POST",
+    path: "/users/register/",
+    payload,
+    requireAuth: true,
+  });
+}
+export async function getDownlineById(userId: string) {
+  return await fetchRequest({
+    method: "GET",
+    path: `/users/downline/by-id/${userId}/`,
+    requireAuth: true,
+  });
+}
 export async function getVehicles(queryString = "") {
   return await fetchRequest({
     method: "GET",
     path: `/vehicles/${queryString}`,   // ⬅️ append query string here
+    requireAuth: true,
+  });
+}
+// Sales endpoints
+export async function getSales(queryString = "") {
+  return await fetchRequest({
+    method: "GET",
+    path: `/sales/${queryString}`,
+    requireAuth: true,
+  });
+}
+
+export async function createSale(payload: {
+  agent: string;
+  vehicle: string;
+  customer_name: string;
+  amount: string;
+  status: string;
+  sale_date?: string;
+}) {
+  return await fetchRequest({
+    method: "POST",
+    path: "/sales/",
+    payload,
+    requireAuth: true,
+  });
+}
+
+export async function updateSale(saleId: string, updates: Partial<{
+  agent: string;
+  vehicle: string;
+  customer_name: string;
+  amount: string;
+  status: string;
+  sale_date?: string;
+}>) {
+  return await fetchRequest({
+    method: "PATCH",
+    path: `/sales/${saleId}/`,
+    payload: updates,
+    requireAuth: true,
+  });
+}
+
+export async function deleteSale(saleId: string) {
+  return await fetchRequest({
+    method: "DELETE",
+    path: `/sales/${saleId}/`,
     requireAuth: true,
   });
 }
@@ -20,7 +99,7 @@ export async function createVehicle(vehicle: {
   name: string;
   model_number: string;
   price: string;
-  commission_base: string;
+  points: string;
 }) {
   return await fetchRequest({
     method: "POST",
@@ -43,7 +122,7 @@ export async function updateVehicle(vehicleId: string, updates: Partial<{
   name: string;
   model_number: string;
   price: string;
-  commission_base: string;
+  points: string;
 }>) {
   return await fetchRequest({
     method: "PATCH",
