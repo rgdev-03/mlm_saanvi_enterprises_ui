@@ -1,0 +1,75 @@
+name: CI/CD Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  VPS_USER: ${{ secrets.VPS_USER }}
+  VPS_HOST: ${{ secrets.VPS_HOST }}
+  VPS_PASS: ${{ secrets.VPS_PASS }}
+  PROJECT_NAME: ${{ vars.PROJECT_NAME }}
+  APP_NAME: ${{ vars.APP_NAME }}
+  DNS: ${{ vars.DNS }}
+  APP_PORT: ${{ vars.APP_PORT }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # Deploy directly to VPS (no Docker Hub)
+      - name: Deploy to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.VPS_HOST }}
+          username: ${{ env.VPS_USER }}
+          password: ${{ env.VPS_PASS }}
+          source: "."
+          target: "/tmp/${{ env.PROJECT_NAME }}"
+
+      - name: Run app on VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ env.VPS_HOST }}
+          username: ${{ env.VPS_USER }}
+          password: ${{ env.VPS_PASS }}
+          script: |
+            set -e
+            BASE_DIR=/apps/${{ env.PROJECT_NAME }}
+            APP_DIR=$BASE_DIR/${{ env.APP_NAME }}
+
+            echo "🛠️ Setting up project dir..."
+            mkdir -p $APP_DIR
+            cp -r /tmp/${{ env.PROJECT_NAME }}/* $APP_DIR/
+
+            echo "🐳 Building image on VPS..."
+            cd $APP_DIR
+            docker build -t ${{ env.PROJECT_NAME }}-${{ env.APP_NAME }}:latest .
+
+            echo "⚙️ Writing docker-compose.yml..."
+            cat > docker-compose.yml <<EOF
+            version: "3.9"
+            services:
+              ${{ env.APP_NAME }}:
+                image: ${{ env.PROJECT_NAME }}-${{ env.APP_NAME }}:latest
+                restart: always
+                networks:
+                  - caddy_net
+                labels:
+                  caddy: ${{ env.DNS }}
+                  caddy.reverse_proxy: "{{upstreams ${{ env.APP_PORT }}}}"
+            networks:
+              caddy_net:
+                external: true
+            EOF
+
+            echo "🚀 Starting container..."
+            docker compose down || true
+            docker compose up -d --build
+
+            echo "✅ Deployed successfully."
